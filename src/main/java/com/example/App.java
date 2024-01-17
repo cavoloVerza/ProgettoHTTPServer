@@ -41,7 +41,7 @@ public class App {
 
                 if(stringhe[1].substring(stringhe[1].length()-1).equals("/")) {
 
-                    file = new File("hatdocs/index.html"); //se vuoto metto index di default
+                    file = new File("htdocs/index.html"); //se vuoto metto index di default
 
                 }
 
