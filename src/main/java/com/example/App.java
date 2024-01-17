@@ -12,8 +12,8 @@ import java.net.Socket;
 
 public class App {
     public static void main( String[] args ){
-        // Server
 
+        // Server
         try {
 
             ServerSocket server = new ServerSocket(3000);
@@ -24,12 +24,11 @@ public class App {
                 BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 
-                String line;
-                line = in.readLine();
+                String line = in.readLine();
                 System.out.println("La string è: " + line);
 
                 String[] stringhe = line.split(" ");
-                String path = stringhe[1].substring(1);
+                System.out.println("La string è: " + stringhe[1]);
                     
                 do{
 
@@ -38,42 +37,60 @@ public class App {
 
                 }while(!line.isEmpty());
 
-                File file = new File(path);
-                boolean flag = file.exists();
+                File file = null;
 
-                if(flag) {
+                if(stringhe[1].substring(stringhe[1].length()-1).equals("/")) {
 
-                    String msg = "File trovato";
-                    System.out.println("msg");
-
-                    out.writeBytes("HTTP/1.1 200 OK\n");
-                    out.writeBytes("Content-Lenght: " + msg.length() + '\n');
-                    out.writeBytes("\n");
-                    out.writeBytes(msg);
+                    file = new File("hatdocs/index.html"); //se vuoto metto index di default
 
                 }
 
                 else {
 
-                    String msg = "File non trovato";
-                    System.out.println("msg");
+                    if(stringhe[1].substring(1).equals("test")) {
 
-                    out.writeBytes("HTTP/1.1 400 Not found\n");
-                    out.writeBytes("Content-Lenght: " + msg.length() + '\n');
-                    out.writeBytes("\n");
-                    out.writeBytes(msg);
+                        out.writeBytes("HTTP/1.1 301 Moved Permanently\n");
+                        out.writeBytes("Location: https://www.google.com\n");
+                        out.writeBytes("\n");
+
+                    }
+
+                    else {
+
+                        file = new File("htdocs/"+stringhe[1].substring(1)); //cerco il file con quell'indirizzo
+
+                    }
 
                 }
 
+                String rawResponse = "";
+
+                if(file.exists()) {
+
+                    sendBinaryFile(socket, file);
+                }
+
+                else {
+
+                    String response = "Il file non esiste.";
+                    int responseLength = response.length();
+
+                    rawResponse += "HTTP/1.1 404 Not Found\n";
+                    rawResponse += "Content-Length: " + responseLength + "\n";
+                    rawResponse += "Content-Type: text/plain\n";
+                    rawResponse += "\n";
+                    rawResponse += response;
+                    
+                }
+
+                out.writeBytes(rawResponse);
                 socket.close();
             }
 
         } 
 
         catch (Exception e) {
-            System.out.println(e.getMessage());
-            System.out.println("errore durante l'istanza del server");
-            System.exit(1);
+            System.err.println(e.getMessage());
         }
 
     }
@@ -83,10 +100,9 @@ public class App {
         DataOutputStream output = new DataOutputStream(socket.getOutputStream());
         output.writeBytes("HTTP/1.1 200 OK\n");
         output.writeBytes("Contenet-Lenght: " + file.length() + "\n");
-
         output.writeBytes("Content-Type: " + getContentType(file) + "\n");
-
         output.writeBytes("\n");
+        
         InputStream input = new FileInputStream(file);
         byte[] buf = new byte[8192];
         int n;
@@ -100,7 +116,22 @@ public class App {
     }
 
     private static String getContentType(File file) {
-        return null;
+        String filename = file.getName();
+        String[] temp = filename.split("\\.");
+        String extension = temp[temp.length - 1];
+        switch (extension) {
+            case "html":
+                return "Content-Type: text/html";
+            case "png":
+                return "Content-Type: image/png";
+            case "jpeg":
+            case "jpg":
+                return "Content-Type: image/jpeg";
+            case "css":
+                return "Content-Type: text/css";
+            default:
+                return "Content-Type: text/plain";
+        }
     }
 
 }
